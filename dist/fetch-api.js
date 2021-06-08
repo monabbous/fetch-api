@@ -134,4 +134,4 @@ var FetchApi = /** @class */ (function () {
     return FetchApi;
 }());
 export { FetchApi };
-//# sourceMappingURL=fetcht-api.js.map
+//# sourceMappingURL=fetch-api.js.map

@@ -1,22 +1,31 @@
 {
   "name": "@monabbous/fetch-api",
-  "version": "0.0.8",
+  "version": "0.0.15",
   "description": "This package is abstracted from and inspired by the packages\n\n- `axios`\n- `@monabbous/ng-api-wrapper`\n  \n  where it simplifies the requests to the API",
   "main": "dist/index.js",
   "scripts": {
     "watch": "tsc -w --project tsconfig.json",
-    "build": "tsc --project tsconfig.json"
+    "build": "tsc --project tsconfig.json",
+    "cdn:build": "parcel build src/fetch-api.cdn.ts -o dist/fetch-api.cdn.js",
+    "predeploy": "del -f dist && npm run build && npm run cdn:build",
+    "deploy": "npm publish"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/monabbous/fetch-api.git"
   },
   "keywords": [
-    "api", "fetch", "axios", "minimal", "http"
+    "api",
+    "fetch",
+    "axios",
+    "minimal",
+    "http"
   ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "del-cli": "^3.0.1",
+    "parcel-bundler": "^1.12.5",
     "typescript": "^4.3.2"
   }
 }

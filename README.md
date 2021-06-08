@@ -16,34 +16,34 @@ This package is abstracted from and inspired by the packages
 
 ## Installation
 
-Using cdn
+### Using cdn
 
-_comming soon_
-
-Using npm
+```html
+<script src="https://unpkg.com/@monabbous/fetch-api@latest/dist/fetch-api.cdn.js"></script>
+```
+### Using npm
 
 ```bash
 npm i @monabbous/fetch-api
 ```
 
-## Implementation
-
-#### Importing
-
 Import the class
-_typescript or modern javascript_
 
-```ts
-import {FetchApi} from "@monabbous/fetch-api";
-```
-
-_javascript_
+_in javascript_
 
 ```javascript
 const {FetchApi} = require('@monabbous/fetch-api');
 // Or
 const FetchApi = require('@monabbous/fetch-api').FetchApi; 
 ```
+
+_in typescript or modern javascript_
+
+```ts
+import {FetchApi} from "@monabbous/fetch-api";
+```
+
+## Implementation
 
 #### Setting up
 
