@@ -1,17 +1,21 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
-    "baseUrl": "./index.ts",
-    "outDir": "./dist/",
-    "sourceMap": true,
-    "declaration": true,
-    "inlineSources": true,
-    "downlevelIteration": true,
-    "experimentalDecorators": true,
-    "moduleResolution": "node",
-    "importHelpers": true,
+    "lib": ["es5", "es2015.promise", "dom", "es2015"],
     "target": "es5",
-    "module": "es2020",
-    "lib": ["es6", "dom", "es2017"]
-  }
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "outDir": "dist",
+    "module": "es2015",
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": false,
+    "sourceMap": true
+  },
+  "exclude": [
+    "node_modules"
+  ]
 }
