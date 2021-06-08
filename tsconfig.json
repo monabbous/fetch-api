@@ -1,0 +1,17 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "baseUrl": "./index.ts",
+    "outDir": "./dist/",
+    "sourceMap": true,
+    "declaration": true,
+    "inlineSources": true,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "target": "es5",
+    "module": "es2020",
+    "lib": ["es6", "dom", "es2017"]
+  }
+}
