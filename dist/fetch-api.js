@@ -70,43 +70,64 @@ var FetchApi = /** @class */ (function () {
         return version;
     };
     FetchApi.request = function (request) {
-        var _this = this;
-        request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
-        request.observe = request.observe || 'body';
-        request.responseType = request.responseType || 'json';
-        var next = function (r) {
-            if (r.server !== request.server && r.version !== request.version) {
-                r.baseUrl = FetchApi.getFullUrl(r.server, r.version);
-            }
-            return fetch(r.baseUrl + r.path, r)
-                .then(function (response) { return __awaiter(_this, void 0, void 0, function () {
-                var _a;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0:
-                            if (!(r.observe === "body")) return [3 /*break*/, 9];
-                            _a = r.responseType;
-                            switch (_a) {
-                                case "text": return [3 /*break*/, 1];
-                                case "json": return [3 /*break*/, 3];
-                                case "blob": return [3 /*break*/, 5];
-                                case "arraybuffer": return [3 /*break*/, 7];
+        return __awaiter(this, void 0, void 0, function () {
+            var next, nextResponse, response, error_1;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
+                        request.observe = request.observe || 'body';
+                        request.responseType = request.responseType || 'json';
+                        next = function (r) {
+                            request = r;
+                            if (request.server !== request.server && request.version !== request.version) {
+                                request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
                             }
-                            return [3 /*break*/, 9];
-                        case 1: return [4 /*yield*/, response.text()];
-                        case 2: return [2 /*return*/, (_b.sent())];
-                        case 3: return [4 /*yield*/, response.json()];
-                        case 4: return [2 /*return*/, (_b.sent())];
-                        case 5: return [4 /*yield*/, response.blob()];
-                        case 6: return [2 /*return*/, (_b.sent())];
-                        case 7: return [4 /*yield*/, response.arrayBuffer()];
-                        case 8: return [2 /*return*/, (_b.sent())];
-                        case 9: return [2 /*return*/];
-                    }
-                });
-            }); });
-        };
-        return FetchApi.interceptors.request ? FetchApi.interceptors.request(request, next) : next(request);
+                            return fetch(request.baseUrl + request.path, request);
+                        };
+                        nextResponse = function (res) { return __awaiter(_this, void 0, void 0, function () {
+                            var _a;
+                            return __generator(this, function (_b) {
+                                switch (_b.label) {
+                                    case 0:
+                                        if (!(request.observe === "body" && res instanceof Response)) return [3 /*break*/, 9];
+                                        _a = request.responseType;
+                                        switch (_a) {
+                                            case "text": return [3 /*break*/, 1];
+                                            case "json": return [3 /*break*/, 3];
+                                            case "blob": return [3 /*break*/, 5];
+                                            case "arraybuffer": return [3 /*break*/, 7];
+                                        }
+                                        return [3 /*break*/, 9];
+                                    case 1: return [4 /*yield*/, res.text()];
+                                    case 2: return [2 /*return*/, (_b.sent())];
+                                    case 3: return [4 /*yield*/, res.json()];
+                                    case 4: return [2 /*return*/, (_b.sent())];
+                                    case 5: return [4 /*yield*/, res.blob()];
+                                    case 6: return [2 /*return*/, (_b.sent())];
+                                    case 7: return [4 /*yield*/, res.arrayBuffer()];
+                                    case 8: return [2 /*return*/, (_b.sent())];
+                                    case 9: return [2 /*return*/, res];
+                                }
+                            });
+                        }); };
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 4, , 6]);
+                        return [4 /*yield*/, (FetchApi.interceptors.request ? FetchApi.interceptors.request(request, next) : next(request))];
+                    case 2:
+                        response = _a.sent();
+                        return [4 /*yield*/, (FetchApi.interceptors.response ? FetchApi.interceptors.response(response, request, nextResponse) : nextResponse(response))];
+                    case 3: return [2 /*return*/, _a.sent()];
+                    case 4:
+                        error_1 = _a.sent();
+                        return [4 /*yield*/, (FetchApi.interceptors.response ? FetchApi.interceptors.response(error_1, request, nextResponse) : nextResponse(error_1))];
+                    case 5: throw _a.sent();
+                    case 6: return [2 /*return*/];
+                }
+            });
+        });
     };
     FetchApi.get = function (request) {
         // @ts-ignore

@@ -14,7 +14,8 @@ export declare class FetchApi {
     static servers: Servers;
     static defaultServer: string;
     static readonly interceptors: {
-        request?(request: Request, next: (Request: any) => Promise<any | string | Blob | ArrayBuffer>): Promise<Request>;
+        request?(request: Request, next: (request: Request) => Promise<any | string | Blob | ArrayBuffer>): Promise<Response | any>;
+        response?(response: Response, request: Request, next: (response: Response) => Promise<any | string | Blob | ArrayBuffer>): Promise<Response | any>;
     };
     static getFullUrl(server: any, version: any): string;
     protected static handleServer(server: any): string;
