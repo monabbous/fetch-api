@@ -19,7 +19,8 @@ export class FetchApi {
     public static servers: Servers = {};
     public static defaultServer: string = '';
     public static readonly interceptors: {
-        request?(request: Request, next: (Request) => Promise<any | string | Blob | ArrayBuffer>): Promise<Request>
+        request?(request: Request, next: (request: Request) => Promise<any | string | Blob | ArrayBuffer>): Promise<Response | any>
+        response?(response: Response, request: Request, next: (response: Response) => Promise<any | string | Blob | ArrayBuffer>): Promise<Response | any>
     } = {};
 
     public static getFullUrl(server, version): string {
@@ -49,32 +50,42 @@ export class FetchApi {
     public static request<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
     public static request<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
     public static request<T = any>(request: JSONRequest): Promise<T>;
-    public static request<T = any>(request: Request) {
+    public static async request<T = any>(request: Request) {
         request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
         request.observe = request.observe || 'body';
         request.responseType = request.responseType || 'json';
 
         const next = (r: Request) => {
-            if (r.server !== request.server && r.version !== request.version) {
-                r.baseUrl = FetchApi.getFullUrl(r.server, r.version);
+            request = r;
+            if (request.server !== request.server && request.version !== request.version) {
+                request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
             }
-            return fetch(r.baseUrl + r.path, r)
-                .then(async response => {
-                    if (r.observe === "body") {
-                        switch (r.responseType) {
-                            case "text":
-                                return (await response.text());
-                            case "json":
-                                return (await response.json()) as T;
-                            case "blob":
-                                return (await response.blob());
-                            case "arraybuffer":
-                                return (await response.arrayBuffer());
-                        }
-                    }
-                });
+            return fetch(request.baseUrl + request.path, request);
         };
-        return FetchApi.interceptors.request ? FetchApi.interceptors.request(request, next) : next(request);
+
+        const nextResponse = async (res) => {
+            if (request.observe === "body" && res instanceof Response) {
+                switch (request.responseType) {
+                    case "text":
+                        return (await res.text());
+                    case "json":
+                        return (await res.json()) as T;
+                    case "blob":
+                        return (await res.blob());
+                    case "arraybuffer":
+                        return (await res.arrayBuffer());
+                }
+            }
+            return res;
+        }
+
+
+        try {
+            const response = await (FetchApi.interceptors.request ? FetchApi.interceptors.request(request, next) : next(request));
+            return await (FetchApi.interceptors.response ? FetchApi.interceptors.response(response, request, nextResponse) : nextResponse(response));
+        } catch (error) {
+            throw await (FetchApi.interceptors.response ? FetchApi.interceptors.response(error, request, nextResponse) : nextResponse(error));
+        }
     }
 
     public static get<T extends string = string>(request: TextRequest): Promise<T>;
