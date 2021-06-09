@@ -67,14 +67,23 @@ export class FetchApi {
             if (request.observe === "body" && res instanceof Response) {
                 switch (request.responseType) {
                     case "text":
-                        return (await res.text());
+                        res = (await res.text());
+                        break;
                     case "json":
-                        return (await res.json()) as T;
+                        res = (await res.json()) as T;
+                        break;
                     case "blob":
-                        return (await res.blob());
+                        res = (await res.blob());
+                        break;
                     case "arraybuffer":
-                        return (await res.arrayBuffer());
+                        res = (await res.arrayBuffer());
+                        break;
                 }
+
+                if ((res as Response).status >= 300) {
+                    throw res;
+                }
+                return res;
             }
             return res;
         }

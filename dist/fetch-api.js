@@ -91,7 +91,7 @@ var FetchApi = /** @class */ (function () {
                             return __generator(this, function (_b) {
                                 switch (_b.label) {
                                     case 0:
-                                        if (!(request.observe === "body" && res instanceof Response)) return [3 /*break*/, 9];
+                                        if (!(request.observe === "body" && res instanceof Response)) return [3 /*break*/, 10];
                                         _a = request.responseType;
                                         switch (_a) {
                                             case "text": return [3 /*break*/, 1];
@@ -101,14 +101,27 @@ var FetchApi = /** @class */ (function () {
                                         }
                                         return [3 /*break*/, 9];
                                     case 1: return [4 /*yield*/, res.text()];
-                                    case 2: return [2 /*return*/, (_b.sent())];
+                                    case 2:
+                                        res = (_b.sent());
+                                        return [3 /*break*/, 9];
                                     case 3: return [4 /*yield*/, res.json()];
-                                    case 4: return [2 /*return*/, (_b.sent())];
+                                    case 4:
+                                        res = (_b.sent());
+                                        return [3 /*break*/, 9];
                                     case 5: return [4 /*yield*/, res.blob()];
-                                    case 6: return [2 /*return*/, (_b.sent())];
+                                    case 6:
+                                        res = (_b.sent());
+                                        return [3 /*break*/, 9];
                                     case 7: return [4 /*yield*/, res.arrayBuffer()];
-                                    case 8: return [2 /*return*/, (_b.sent())];
-                                    case 9: return [2 /*return*/, res];
+                                    case 8:
+                                        res = (_b.sent());
+                                        return [3 /*break*/, 9];
+                                    case 9:
+                                        if (res.status >= 300) {
+                                            throw res;
+                                        }
+                                        return [2 /*return*/, res];
+                                    case 10: return [2 /*return*/, res];
                                 }
                             });
                         }); };
