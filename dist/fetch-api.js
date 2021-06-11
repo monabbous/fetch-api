@@ -123,7 +123,7 @@ var FetchApi = /** @class */ (function () {
                             if (request.method === 'GET' && (request.body instanceof URLSearchParams || request.body instanceof Object)) {
                                 var params = new URLSearchParams(request.body instanceof URLSearchParams ? request.body : Object.entries(flattenObject(request.body)));
                                 delete request.body;
-                                params.forEach(function (v, k) { return url.searchParams.append(k, v); });
+                                params.forEach(function (v, k) { return url.searchParams.set(k.replace(/^\?/, ''), v); });
                             }
                             else {
                                 if (!(request.body instanceof Blob ||

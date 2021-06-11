@@ -102,7 +102,7 @@ export class FetchApi {
             if (request.method === 'GET' && (request.body instanceof URLSearchParams || request.body instanceof Object)) {
                 const params = new URLSearchParams(request.body instanceof URLSearchParams ? request.body : Object.entries(flattenObject(request.body)));
                 delete request.body;
-                params.forEach((v, k) => url.searchParams.append(k, v));
+                params.forEach((v, k) => url.searchParams.set(k.replace(/^\?/, ''), v));
             } else {
                 if (
                     !(request.body instanceof Blob ||
