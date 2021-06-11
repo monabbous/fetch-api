@@ -1,4 +1,19 @@
-export type BaseRequest = RequestInit & {
+export type ReadRequestInput = {
+    method?: 'GET';
+    body?: object | URLSearchParams;
+}
+
+
+export type WriteRequestInput = {
+    method?: 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+    body?: Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | string;
+    flatten?: true;
+};
+
+export type RequestInput = ReadRequestInput | WriteRequestInput;
+
+
+export type BaseRequest = Omit<RequestInit, 'method' | 'body'> & {
     path: string;
 } & ({
     baseUrl?: string;
@@ -8,15 +23,6 @@ export type BaseRequest = RequestInit & {
 } | {
     baseUrl?: string;
     outsource: true;
-}) & (
-    {
-        method?: 'POST' | 'PATCH' | 'PUT' | 'DELETE';
-        body?: Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | string;
-        flatten?: true;
-    }
-    | {
-    method?: 'GET';
-    body?: object | URLSearchParams;
 });
 
 export type DefaultRequest = BaseRequest & {

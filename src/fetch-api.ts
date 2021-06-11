@@ -1,9 +1,9 @@
 import {
     ArrayBufferRequest,
     BlobRequest, DefaultRequest,
-    JSONRequest,
-    Request,
-    TextRequest
+    JSONRequest, ReadRequestInput,
+    Request, RequestInput,
+    TextRequest, WriteRequestInput
 } from "./interfaces/requests.interface";
 
 interface ServerVersions {
@@ -42,8 +42,8 @@ export class FetchApi {
     public static servers: Servers = {};
     public static defaultServer: string = '';
     public static readonly interceptors: {
-        request?(request: Request, next: (request: Request) => Promise<any | string | Blob | ArrayBuffer>): Promise<Response | any>
-        response?(response: Response, request: Request, next: (response: Response) => Promise<any | string | Blob | ArrayBuffer>): Promise<Response | any>
+        request?(request: (Request & RequestInput), next: (request: (Request & RequestInput)) => Promise<any | string | Blob | ArrayBuffer>): Promise<Response | any>
+        response?(response: Response, request: (Request & RequestInput), next: (response: Response) => Promise<any | string | Blob | ArrayBuffer>): Promise<Response | any>
     } = {};
 
     public static getFullUrl(server, version): string {
@@ -73,12 +73,12 @@ export class FetchApi {
         return version;
     }
 
-    public static request(request: DefaultRequest): Promise<Response>;
-    public static request<T extends string = string>(request: TextRequest): Promise<T>;
-    public static request<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
-    public static request<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
-    public static request<T = unknown>(request: JSONRequest): Promise<T>;
-    public static async request<T = any>(request: Request) {
+    public static request(request: DefaultRequest & RequestInput): Promise<Response>;
+    public static request<T extends string = string>(request: TextRequest & RequestInput): Promise<T>;
+    public static request<T extends Blob = Blob>(request: BlobRequest & RequestInput): Promise<T>;
+    public static request<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest & RequestInput): Promise<T>;
+    public static request<T = unknown>(request: JSONRequest & RequestInput): Promise<T>;
+    public static async request<T = any>(request: Request & RequestInput) {
         if (request.outsource !== true) {
             request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
         }
@@ -86,7 +86,7 @@ export class FetchApi {
         request.responseType = request.responseType || 'json';
         let hasError = false;
 
-        const next = (r: Request) => {
+        const next = (r: Request & RequestInput) => {
             request = r;
             request.headers = new Headers(request.headers);
             let url: URL;
@@ -121,7 +121,7 @@ export class FetchApi {
                     request.headers.set('Content-Type', 'multipart/form-data');
                 }
             }
-            return fetch(url.toString(), request);
+            return fetch(url.toString(), request as RequestInit);
         };
 
         const nextResponse = async (res) => {
@@ -170,54 +170,60 @@ export class FetchApi {
         }
     }
 
-    public static get(request: DefaultRequest): Promise<Response>;
-    public static get<T extends string = string>(request: TextRequest): Promise<T>;
-    public static get<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
-    public static get<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
-    public static get<T = any>(request: JSONRequest): Promise<T>;
-    public static get<T = unknown>(request: Request) {
+    public static get(request: DefaultRequest & Omit<ReadRequestInput, 'method'>): Promise<Response>;
+    public static get<T extends string = string>(request: TextRequest & Omit<ReadRequestInput, 'method'>): Promise<T>;
+    public static get<T extends Blob = Blob>(request: BlobRequest & Omit<ReadRequestInput, 'method'>): Promise<T>;
+    public static get<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest & Omit<ReadRequestInput, 'method'>): Promise<T>;
+    public static get<T = any>(request: JSONRequest & Omit<ReadRequestInput, 'method'>): Promise<T>;
+    public static get<T = unknown>(request: Request & Omit<ReadRequestInput, 'method'>) {
         // @ts-ignore
-        return FetchApi.request<T>({...request, method: 'GET'} as Request);
+        return FetchApi.request<T>({...request, method: 'GET'});
     }
 
-    public static post(request: DefaultRequest): Promise<Response>;
-    public static post<T extends string = string>(request: TextRequest): Promise<T>;
-    public static post<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
-    public static post<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
-    public static post<T = any>(request: JSONRequest): Promise<T>;
-    public static post<T = unknown>(request: Request) {
+    public static post(request: DefaultRequest & Omit<WriteRequestInput, 'method'>): Promise<Response>;
+    public static post<T extends string = string>(request: TextRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static post<T extends Blob = Blob>(request: BlobRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static post<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static post<T = any>(request: JSONRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static post<T = unknown>(request: Request & Omit<WriteRequestInput, 'method'>) {
         // @ts-ignore
-        return FetchApi.request<T>({...request, method: 'POST'} as Request);
+        return FetchApi.request<T>({
+            ...request,
+            method: 'POST'
+        });
     }
 
-    public static put(request: DefaultRequest): Promise<Response>;
-    public static put<T extends string = string>(request: TextRequest): Promise<T>;
-    public static put<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
-    public static put<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
-    public static put<T = any>(request: JSONRequest): Promise<T>;
-    public static put<T = unknown>(request: Request) {
+    public static put(request: DefaultRequest & Omit<WriteRequestInput, 'method'>): Promise<Response>;
+    public static put<T extends string = string>(request: TextRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static put<T extends Blob = Blob>(request: BlobRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static put<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static put<T = any>(request: JSONRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static put<T = unknown>(request: Request & Omit<WriteRequestInput, 'method'>) {
         // @ts-ignore
-        return FetchApi.request<T>({...request, method: 'PUT'} as Request);
+        return FetchApi.request<T>({...request, method: 'PUT'} as Request & WriteRequestInput);
     }
 
-    public static patch(request: DefaultRequest): Promise<Response>;
-    public static patch<T extends string = string>(request: TextRequest): Promise<T>;
-    public static patch<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
-    public static patch<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
-    public static patch<T = any>(request: JSONRequest): Promise<T>;
-    public static patch<T = unknown>(request: Request) {
+    public static patch(request: DefaultRequest & Omit<WriteRequestInput, 'method'>): Promise<Response>;
+    public static patch<T extends string = string>(request: TextRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static patch<T extends Blob = Blob>(request: BlobRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static patch<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static patch<T = any>(request: JSONRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static patch<T = unknown>(request: Request & Omit<WriteRequestInput, 'method'>) {
         // @ts-ignore
-        return FetchApi.request<T>({...request, method: 'PATCH'} as Request);
+        return FetchApi.request<T>({
+            ...request,
+            method: 'PATCH'
+        });
     }
 
-    public static delete(request: DefaultRequest): Promise<Response>;
-    public static delete<T extends string = string>(request: TextRequest): Promise<T>;
-    public static delete<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
-    public static delete<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
-    public static delete<T = any>(request: JSONRequest): Promise<T>;
-    public static delete<T = unknown>(request: Request) {
+    public static delete(request: DefaultRequest & Omit<WriteRequestInput, 'method'>): Promise<Response>;
+    public static delete<T extends string = string>(request: TextRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static delete<T extends Blob = Blob>(request: BlobRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static delete<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static delete<T = any>(request: JSONRequest & Omit<WriteRequestInput, 'method'>): Promise<T>;
+    public static delete<T = unknown>(request: Request & Omit<WriteRequestInput, 'method'>) {
         // @ts-ignore
-        return FetchApi.request<T>({...request, method: 'DELETE'} as Request);
+        return FetchApi.request<T>({...request, method: 'DELETE'});
     }
 
 }
