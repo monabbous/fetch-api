@@ -1,34 +1,51 @@
-export interface BaseRequest extends RequestInit {
-    baseUrl?: string;
-    method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+export type BaseRequest = RequestInit & {
     path: string;
-    outsource?: boolean;
+} & ({
+    baseUrl?: string;
     server?: number | string;
     version?: number | string;
+    outsource?: undefined | false;
+} | {
+    baseUrl?: string;
+    outsource: true;
+}) & (
+    {
+        method?: 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+        body?: Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | string;
+        flatten?: true;
+    }
+    | {
+    method?: 'GET';
+    body?: object | URLSearchParams;
+});
+
+export type DefaultRequest = BaseRequest & {
+    responseType?: undefined;
+    observe?: 'response';
 }
 
-
-export interface JSONRequest extends BaseRequest {
+export type JSONRequest = BaseRequest & {
     responseType?: 'json';
     observe?: 'body';
 }
 
-export interface BlobRequest extends BaseRequest {
+export type BlobRequest = BaseRequest & {
     responseType: 'blob';
     observe?: 'body';
 }
 
-export interface TextRequest extends BaseRequest {
+export type TextRequest = BaseRequest & {
     responseType: 'text';
     observe?: 'body';
 }
 
-export interface ArrayBufferRequest extends BaseRequest {
+export type ArrayBufferRequest = BaseRequest & {
     responseType: 'arraybuffer';
     observe?: 'body';
 }
 
 export type Request =
+    | DefaultRequest
     | JSONRequest
     | BlobRequest
     | TextRequest

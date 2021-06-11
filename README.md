@@ -129,6 +129,18 @@ FetchApi.interceptors.request = (request, next) => {
 };
 ```
 
+Also, You can intercept the response, for example to throw as an error if response body has an error
+```javascript
+FetchApi.interceptors.request = (response, request, next) => {
+    const parsedResponse = next(response);
+    
+    if (parsedResponse.error) {
+        throw parsedResponse;
+    }
+    return parsedResponse;
+};
+```
+
 ## Issuing and Contributing
 You can issue, fork, review on the package's [github repo](https://github.com/monabbous/fetch-api.git).
 

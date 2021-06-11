@@ -1,4 +1,10 @@
-import {ArrayBufferRequest, BlobRequest, JSONRequest, Request, TextRequest} from "./interfaces/requests.interface";
+import {
+    ArrayBufferRequest,
+    BlobRequest, DefaultRequest,
+    JSONRequest,
+    Request,
+    TextRequest
+} from "./interfaces/requests.interface";
 
 interface ServerVersions {
     [key: string]: string;
@@ -12,6 +18,23 @@ interface Server {
 
 export interface Servers {
     [key: string]: Server;
+}
+
+
+const flattenObject = (object) => {
+    const f = (o, acc, keys) => {
+        return Object.entries(o).reduce((a, [k, value]) => {
+            let key = [...keys, k];
+            if (typeof value === 'object') {
+                f(value, a, key);
+            } else {
+                a[key.reduce((a, b) => `${a}[${b}]`)] = value;
+            }
+            return a;
+        }, acc);
+    }
+
+    return f(object, {}, []);
 }
 
 export class FetchApi {
@@ -32,7 +55,9 @@ export class FetchApi {
 
     protected static handleServer(server): string {
         if (Object.keys(FetchApi.servers).indexOf(server) === -1) {
-            console.warn(`Ng Api Wrapper: Server '${server}' is not in the configuration, will use the defaultServer`);
+            if (server !== undefined) {
+                console.warn(`Ng Api Wrapper: Server '${server}' is not in the configuration, will use the defaultServer`);
+            }
             server = FetchApi.defaultServer;
         }
         return server;
@@ -40,52 +65,99 @@ export class FetchApi {
 
     protected static handleServerVersion(server, version): string {
         if (Object.keys(FetchApi.servers[server].versions).indexOf(version) === -1) {
-            console.warn(`Ng Api Wrapper: Server '${server}' Api version '${version}' is not in the configuration, will use the defaultVersion`);
+            if (version !== undefined) {
+                console.warn(`Ng Api Wrapper: Server '${server}' Api version '${version}' is not in the configuration, will use the defaultVersion`);
+            }
             version = FetchApi.servers[server]?.defaultVersion;
         }
         return version;
     }
 
+    public static request(request: DefaultRequest): Promise<Response>;
     public static request<T extends string = string>(request: TextRequest): Promise<T>;
     public static request<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
     public static request<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
-    public static request<T = any>(request: JSONRequest): Promise<T>;
+    public static request<T = unknown>(request: JSONRequest): Promise<T>;
     public static async request<T = any>(request: Request) {
-        request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
+        if (request.outsource !== true) {
+            request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
+        }
         request.observe = request.observe || 'body';
         request.responseType = request.responseType || 'json';
+        let hasError = false;
 
         const next = (r: Request) => {
             request = r;
-            if (request.server !== request.server && request.version !== request.version) {
-                request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
+            request.headers = new Headers(request.headers);
+            let url: URL;
+            if (request.outsource !== true) {
+                if (request.server !== request.server && request.version !== request.version) {
+                    request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
+                }
+                url = new URL(request.baseUrl + request.path);
+            } else {
+                url = new URL(request.path);
             }
-            return fetch(request.baseUrl + request.path, request);
+
+            if (request.method === 'GET' && (request.body instanceof URLSearchParams || request.body instanceof Object)) {
+                const params = new URLSearchParams(request.body instanceof URLSearchParams ? request.body : Object.entries(flattenObject(request.body)));
+                delete request.body;
+                params.forEach((v, k) => url.searchParams.append(k, v));
+            } else {
+                if (
+                    !(request.body instanceof Blob ||
+                        request.body instanceof FormData ||
+                        request.body instanceof ArrayBuffer ||
+                        request.body instanceof URLSearchParams ||
+                        request.body instanceof ReadableStream ||
+                        request.body instanceof String)
+                    && ['application/json', '', undefined].includes(request.headers.get('Content-Type'))) {
+                    request.headers.set('Content-Type', 'application/json');
+                    // @ts-ignore
+                    if (request.flatten) {
+                        request.body = flattenObject(request.body);
+                    }
+                } else if (request.body instanceof FormData) {
+                    request.headers.set('Content-Type', 'multipart/form-data');
+                }
+            }
+            return fetch(url.toString(), request);
         };
 
         const nextResponse = async (res) => {
             if (request.observe === "body" && res instanceof Response) {
+                let body: any = res.body;
                 switch (request.responseType) {
                     case "text":
-                        res = (await res.text());
+                        body = (await res.text()) as (T | String);
                         break;
                     case "json":
-                        res = (await res.json()) as T;
+                        body = (await res.json()) as (T | Object);
                         break;
                     case "blob":
-                        res = (await res.blob());
+                        body = (await res.blob()) as (T | Blob);
                         break;
                     case "arraybuffer":
-                        res = (await res.arrayBuffer());
+                        body = (await res.arrayBuffer()) as (T | ArrayBuffer);
                         break;
                 }
 
-                if ((res as Response).status >= 300) {
-                    throw res;
+                if (hasError) {
+                    throw body;
                 }
-                return res;
+                return body;
+            } else if (res.observe === "response" && res instanceof Response) {
+                if (hasError) {
+                    return res as Response;
+                } else {
+                    throw res as Response;
+                }
             }
-            return res;
+            if (hasError) {
+                return res;
+            } else {
+                throw res;
+            }
         }
 
 
@@ -93,51 +165,57 @@ export class FetchApi {
             const response = await (FetchApi.interceptors.request ? FetchApi.interceptors.request(request, next) : next(request));
             return await (FetchApi.interceptors.response ? FetchApi.interceptors.response(response, request, nextResponse) : nextResponse(response));
         } catch (error) {
+            hasError = true;
             throw await (FetchApi.interceptors.response ? FetchApi.interceptors.response(error, request, nextResponse) : nextResponse(error));
         }
     }
 
+    public static get(request: DefaultRequest): Promise<Response>;
     public static get<T extends string = string>(request: TextRequest): Promise<T>;
     public static get<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
     public static get<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
     public static get<T = any>(request: JSONRequest): Promise<T>;
-    public static get<T = any>(request: Request) {
+    public static get<T = unknown>(request: Request) {
         // @ts-ignore
         return FetchApi.request<T>({...request, method: 'GET'} as Request);
     }
 
+    public static post(request: DefaultRequest): Promise<Response>;
     public static post<T extends string = string>(request: TextRequest): Promise<T>;
     public static post<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
     public static post<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
     public static post<T = any>(request: JSONRequest): Promise<T>;
-    public static post<T = any>(request: Request) {
+    public static post<T = unknown>(request: Request) {
         // @ts-ignore
         return FetchApi.request<T>({...request, method: 'POST'} as Request);
     }
 
+    public static put(request: DefaultRequest): Promise<Response>;
     public static put<T extends string = string>(request: TextRequest): Promise<T>;
     public static put<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
     public static put<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
     public static put<T = any>(request: JSONRequest): Promise<T>;
-    public static put<T = any>(request: Request) {
+    public static put<T = unknown>(request: Request) {
         // @ts-ignore
         return FetchApi.request<T>({...request, method: 'PUT'} as Request);
     }
 
+    public static patch(request: DefaultRequest): Promise<Response>;
     public static patch<T extends string = string>(request: TextRequest): Promise<T>;
     public static patch<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
     public static patch<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
     public static patch<T = any>(request: JSONRequest): Promise<T>;
-    public static patch<T = any>(request: Request) {
+    public static patch<T = unknown>(request: Request) {
         // @ts-ignore
         return FetchApi.request<T>({...request, method: 'PATCH'} as Request);
     }
 
+    public static delete(request: DefaultRequest): Promise<Response>;
     public static delete<T extends string = string>(request: TextRequest): Promise<T>;
     public static delete<T extends Blob = Blob>(request: BlobRequest): Promise<T>;
     public static delete<T extends ArrayBuffer = ArrayBuffer>(request: ArrayBufferRequest): Promise<T>;
     public static delete<T = any>(request: JSONRequest): Promise<T>;
-    public static delete<T = any>(request: Request) {
+    public static delete<T = unknown>(request: Request) {
         // @ts-ignore
         return FetchApi.request<T>({...request, method: 'DELETE'} as Request);
     }
