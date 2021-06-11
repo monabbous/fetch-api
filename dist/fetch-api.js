@@ -45,6 +45,27 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
+};
+var flattenObject = function (object) {
+    var f = function (o, acc, keys) {
+        return Object.entries(o).reduce(function (a, _a) {
+            var k = _a[0], value = _a[1];
+            var key = __spreadArray(__spreadArray([], keys), [k]);
+            if (typeof value === 'object') {
+                f(value, a, key);
+            }
+            else {
+                a[key.reduce(function (a, b) { return a + "[" + b + "]"; })] = value;
+            }
+            return a;
+        }, acc);
+    };
+    return f(object, {}, []);
+};
 var FetchApi = /** @class */ (function () {
     function FetchApi() {
     }
@@ -56,7 +77,9 @@ var FetchApi = /** @class */ (function () {
     };
     FetchApi.handleServer = function (server) {
         if (Object.keys(FetchApi.servers).indexOf(server) === -1) {
-            console.warn("Ng Api Wrapper: Server '" + server + "' is not in the configuration, will use the defaultServer");
+            if (server !== undefined) {
+                console.warn("Ng Api Wrapper: Server '" + server + "' is not in the configuration, will use the defaultServer");
+            }
             server = FetchApi.defaultServer;
         }
         return server;
@@ -64,34 +87,71 @@ var FetchApi = /** @class */ (function () {
     FetchApi.handleServerVersion = function (server, version) {
         var _a;
         if (Object.keys(FetchApi.servers[server].versions).indexOf(version) === -1) {
-            console.warn("Ng Api Wrapper: Server '" + server + "' Api version '" + version + "' is not in the configuration, will use the defaultVersion");
+            if (version !== undefined) {
+                console.warn("Ng Api Wrapper: Server '" + server + "' Api version '" + version + "' is not in the configuration, will use the defaultVersion");
+            }
             version = (_a = FetchApi.servers[server]) === null || _a === void 0 ? void 0 : _a.defaultVersion;
         }
         return version;
     };
     FetchApi.request = function (request) {
         return __awaiter(this, void 0, void 0, function () {
-            var next, nextResponse, response, error_1;
+            var hasError, next, nextResponse, response, error_1;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
+                        if (request.outsource !== true) {
+                            request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
+                        }
                         request.observe = request.observe || 'body';
                         request.responseType = request.responseType || 'json';
+                        hasError = false;
                         next = function (r) {
                             request = r;
-                            if (request.server !== request.server && request.version !== request.version) {
-                                request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
+                            request.headers = new Headers(request.headers);
+                            var url;
+                            if (request.outsource !== true) {
+                                if (request.server !== request.server && request.version !== request.version) {
+                                    request.baseUrl = FetchApi.getFullUrl(request.server, request.version);
+                                }
+                                url = new URL(request.baseUrl + request.path);
                             }
-                            return fetch(request.baseUrl + request.path, request);
+                            else {
+                                url = new URL(request.path);
+                            }
+                            if (request.method === 'GET' && (request.body instanceof URLSearchParams || request.body instanceof Object)) {
+                                var params = new URLSearchParams(request.body instanceof URLSearchParams ? request.body : Object.entries(flattenObject(request.body)));
+                                delete request.body;
+                                params.forEach(function (v, k) { return url.searchParams.append(k, v); });
+                            }
+                            else {
+                                if (!(request.body instanceof Blob ||
+                                    request.body instanceof FormData ||
+                                    request.body instanceof ArrayBuffer ||
+                                    request.body instanceof URLSearchParams ||
+                                    request.body instanceof ReadableStream ||
+                                    request.body instanceof String)
+                                    && ['application/json', '', undefined].includes(request.headers.get('Content-Type'))) {
+                                    request.headers.set('Content-Type', 'application/json');
+                                    // @ts-ignore
+                                    if (request.flatten) {
+                                        request.body = flattenObject(request.body);
+                                    }
+                                }
+                                else if (request.body instanceof FormData) {
+                                    request.headers.set('Content-Type', 'multipart/form-data');
+                                }
+                            }
+                            return fetch(url.toString(), request);
                         };
                         nextResponse = function (res) { return __awaiter(_this, void 0, void 0, function () {
-                            var _a;
+                            var body, _a;
                             return __generator(this, function (_b) {
                                 switch (_b.label) {
                                     case 0:
                                         if (!(request.observe === "body" && res instanceof Response)) return [3 /*break*/, 10];
+                                        body = res.body;
                                         _a = request.responseType;
                                         switch (_a) {
                                             case "text": return [3 /*break*/, 1];
@@ -102,26 +162,43 @@ var FetchApi = /** @class */ (function () {
                                         return [3 /*break*/, 9];
                                     case 1: return [4 /*yield*/, res.text()];
                                     case 2:
-                                        res = (_b.sent());
+                                        body = (_b.sent());
                                         return [3 /*break*/, 9];
                                     case 3: return [4 /*yield*/, res.json()];
                                     case 4:
-                                        res = (_b.sent());
+                                        body = (_b.sent());
                                         return [3 /*break*/, 9];
                                     case 5: return [4 /*yield*/, res.blob()];
                                     case 6:
-                                        res = (_b.sent());
+                                        body = (_b.sent());
                                         return [3 /*break*/, 9];
                                     case 7: return [4 /*yield*/, res.arrayBuffer()];
                                     case 8:
-                                        res = (_b.sent());
+                                        body = (_b.sent());
                                         return [3 /*break*/, 9];
                                     case 9:
-                                        if (res.status >= 300) {
+                                        if (hasError) {
+                                            throw body;
+                                        }
+                                        return [2 /*return*/, body];
+                                    case 10:
+                                        if (res.observe === "response" && res instanceof Response) {
+                                            if (hasError) {
+                                                return [2 /*return*/, res];
+                                            }
+                                            else {
+                                                throw res;
+                                            }
+                                        }
+                                        _b.label = 11;
+                                    case 11:
+                                        if (hasError) {
+                                            return [2 /*return*/, res];
+                                        }
+                                        else {
                                             throw res;
                                         }
-                                        return [2 /*return*/, res];
-                                    case 10: return [2 /*return*/, res];
+                                        return [2 /*return*/];
                                 }
                             });
                         }); };
@@ -135,6 +212,7 @@ var FetchApi = /** @class */ (function () {
                     case 3: return [2 /*return*/, _a.sent()];
                     case 4:
                         error_1 = _a.sent();
+                        hasError = true;
                         return [4 /*yield*/, (FetchApi.interceptors.response ? FetchApi.interceptors.response(error_1, request, nextResponse) : nextResponse(error_1))];
                     case 5: throw _a.sent();
                     case 6: return [2 /*return*/];
