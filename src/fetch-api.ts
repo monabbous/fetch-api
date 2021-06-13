@@ -88,7 +88,7 @@ export class FetchApi {
 
         const next = (r: Request & RequestInput) => {
             request = r;
-            request.headers = new Headers(request.headers);
+            request.headers = new Headers(Object.assign(request.headers, {'X-Requested-With': 'XMLHttpRequest'}));
             let url: URL;
             if (request.outsource !== true) {
                 if (request.server !== request.server && request.version !== request.version) {
@@ -112,7 +112,7 @@ export class FetchApi {
                         request.body instanceof ReadableStream ||
                         request.body instanceof String)
                     && ['application/json', '', undefined, null].includes(request.headers.get('Content-Type'))) {
-                    request.headers.set('Content-Type', 'application/json');
+                    request.headers = new Headers(Object.assign(request.headers, {'Content-Type': 'application/json'}));
                     // @ts-ignore
                     if (request.flatten) {
                         request.body = flattenObject(request.body);
@@ -120,7 +120,7 @@ export class FetchApi {
 
                     request.body = JSON.stringify(request.body);
                 } else if (request.body instanceof FormData) {
-                    request.headers.set('Content-Type', 'multipart/form-data');
+                    request.headers = new Headers(Object.assign(request.headers, {'Content-Type': 'multipart/form-data'}));
                 }
             }
             return fetch(url.toString(), request as RequestInit);
