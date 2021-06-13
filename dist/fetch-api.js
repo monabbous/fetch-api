@@ -132,7 +132,7 @@ var FetchApi = /** @class */ (function () {
                                     request.body instanceof URLSearchParams ||
                                     request.body instanceof ReadableStream ||
                                     request.body instanceof String)
-                                    && ['application/json', '', undefined].includes(request.headers.get('Content-Type'))) {
+                                    && ['application/json', '', undefined, null].includes(request.headers.get('Content-Type'))) {
                                     request.headers.set('Content-Type', 'application/json');
                                     // @ts-ignore
                                     if (request.flatten) {
