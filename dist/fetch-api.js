@@ -138,6 +138,7 @@ var FetchApi = /** @class */ (function () {
                                     if (request.flatten) {
                                         request.body = flattenObject(request.body);
                                     }
+                                    request.body = JSON.stringify(request.body);
                                 }
                                 else if (request.body instanceof FormData) {
                                     request.headers.set('Content-Type', 'multipart/form-data');
