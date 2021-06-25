@@ -1,20 +1,28 @@
+import {FetchApiHeaders} from "../fetch-api-headers";
+
 export type ReadRequestInput = {
     method?: 'GET';
     body?: object | URLSearchParams;
+    flatten?: true;
 }
 
 
 export type WriteRequestInput = {
     method?: 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+} & ({
     body?: Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | string;
-    flatten?: true;
-};
+    flatten?: false;
+} | {
+    body?: object;
+    flatten?: boolean;
+});
 
 export type RequestInput = ReadRequestInput | WriteRequestInput;
 
 
-export type BaseRequest = Omit<RequestInit, 'method' | 'body'> & {
+export type BaseRequest = Omit<RequestInit, 'method' | 'body' | 'headers'> & {
     path: string;
+    headers?: HeadersInit | FetchApiHeaders;
 } & ({
     baseUrl?: string;
     server?: number | string;

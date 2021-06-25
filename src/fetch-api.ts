@@ -1,3 +1,4 @@
+import { FetchApiHeaders } from ".";
 import {
     ArrayBufferRequest,
     BlobRequest, DefaultRequest,
@@ -88,7 +89,7 @@ export class FetchApi {
 
         const next = (r: Request & RequestInput) => {
             request = r;
-            request.headers = new Headers(Object.assign(request.headers, {'X-Requested-With': 'XMLHttpRequest'}));
+            request.headers = new FetchApiHeaders(request.headers).set('X-Requested-With', 'XMLHttpRequest');
             let url: URL;
             if (request.outsource !== true) {
                 if (request.server !== request.server && request.version !== request.version) {
@@ -112,16 +113,18 @@ export class FetchApi {
                         request.body instanceof ReadableStream ||
                         request.body instanceof String)
                     && ['application/json', '', undefined, null].includes(request.headers.get('Content-Type'))) {
-                    request.headers = new Headers(Object.assign(request.headers, {'Content-Type': 'application/json'}));
-                    // @ts-ignore
+                    request.headers = new FetchApiHeaders(request.headers).set('Content-Type', 'application/json');
                     if (request.flatten) {
                         request.body = flattenObject(request.body);
                     }
 
                     request.body = JSON.stringify(request.body);
                 } else if (request.body instanceof FormData) {
-                    request.headers = new Headers(Object.assign(request.headers, {'Content-Type': 'multipart/form-data'}));
+                    request.headers = new FetchApiHeaders(request.headers).set('Content-Type', 'multipart/form-data');
                 }
+            }
+            if (request.headers) {
+                request.headers = request.headers.headers
             }
             return fetch(url.toString(), request as RequestInit);
         };
