@@ -4,30 +4,43 @@ var FetchApiHeaders = /** @class */ (function () {
         this.headers = headers instanceof FetchApiHeaders ? headers.headers : headers || {};
         return new Proxy(this, {
             get: function (target, p, receiver) {
-                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) < -1) {
-                    target.get(p);
+                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) === -1) {
+                    return target.get(p);
+                }
+                else {
+                    return target[p];
                 }
             },
             set: function (target, p, value, receiver) {
-                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) < -1) {
+                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) === -1) {
                     target.set(p, value);
                 }
-                return false;
-            },
-            has: function (target, p) {
-                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) < -1) {
-                    return target.has(p);
-                }
-                return false;
+                return true;
             },
             deleteProperty: function (target, p) {
-                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) < -1) {
+                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) === -1) {
                     target.delete(p);
                 }
                 return false;
             }
         });
     }
+    FetchApiHeaders.prototype[Symbol.iterator] = function () {
+        var _this = this;
+        if (this.headers instanceof Headers || Array.isArray(this.headers)) {
+            return this.headers['[Symbol.iterator]']();
+        }
+        var keys = Object.keys(this.headers);
+        var i = keys.length;
+        return {
+            next: function () {
+                return {
+                    done: (i < 0),
+                    value: _this.headers[keys[--i]]
+                };
+            }
+        };
+    };
     FetchApiHeaders.prototype.set = function (key, value) {
         var _a;
         if (this.headers instanceof Headers) {

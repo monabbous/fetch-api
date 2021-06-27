@@ -1,33 +1,44 @@
-type FetchApiHeadersInterface = {
-    [key: string]: any;
-}
-
-export class FetchApiHeaders implements FetchApiHeadersInterface {
+export class FetchApiHeaders implements Omit<any, keyof FetchApiHeaders> {
     public headers: Record<string, string> | Headers | string[][] = {};
+    [k: string]: any;
+
+ 
+    [Symbol.iterator]() {
+        if (this.headers instanceof Headers || Array.isArray(this.headers)) {
+            return this.headers['[Symbol.iterator]']();
+        }
+        const keys = Object.keys(this.headers);
+        let i = keys.length;
+        return {
+            next: () => {
+                return {
+                    done: (i < 0),
+                    value: this.headers[keys[--i]]
+                }
+            }
+        };
+
+    }
 
     constructor(headers?: Record<string, string> | Headers | string[][] | FetchApiHeaders) {
         this.headers = headers instanceof FetchApiHeaders ? headers.headers : headers || {};
 
         return new Proxy(this, {
             get(target: FetchApiHeaders, p: string, receiver: any): any {
-                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) < -1) {
-                    target.get(p);
+                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) === -1) {
+                    return target.get(p);
+                } else {
+                    return target[p];
                 }
             },
             set(target: FetchApiHeaders, p: string, value: any, receiver: any): boolean {
-                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) < -1) {
+                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) === -1) {
                     target.set(p, value);
                 }
-                return false;
-            },
-            has(target: FetchApiHeaders, p: string): boolean {
-                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) < -1) {
-                    return target.has(p);
-                }
-                return false;
+                return true;
             },
             deleteProperty(target: FetchApiHeaders, p: string): boolean {
-                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) < -1) {
+                if (['headers', 'get', 'set', 'append', 'delete', 'has'].indexOf(p) === -1) {
                     target.delete(p);
                 }
                 return false;
